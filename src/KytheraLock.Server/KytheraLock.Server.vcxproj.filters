@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\3rdParty\sqlite\sqlite3.h">
+      <Filter>3rd Party\Sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="VaultStorageLayer.h">
+      <Filter>Server\Database Layer</Filter>
+    </ClInclude>
+    <ClInclude Include="SqliteDatabase.h">
+      <Filter>Server\Database Layer</Filter>
+    </ClInclude>
+    <ClInclude Include="Statement.h">
+      <Filter>Server\Database Layer</Filter>
+    </ClInclude>
+    <ClInclude Include="Vault.h">
+      <Filter>Server</Filter>
+    </ClInclude>
+    <ClInclude Include="CryptoEngine.h">
+      <Filter>Server</Filter>
+    </ClInclude>
+    <ClInclude Include="Version.h">
+      <Filter>Server</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\3rdParty\sqlite\sqlite3.c">
+      <Filter>3rd Party\Sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="Server.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
+    <ClCompile Include="SqliteDatabase.cpp">
+      <Filter>Server\Database Layer</Filter>
+    </ClCompile>
+    <ClCompile Include="Statement.cpp">
+      <Filter>Server\Database Layer</Filter>
+    </ClCompile>
+    <ClCompile Include="VaultStorageLayer.cpp">
+      <Filter>Server\Database Layer</Filter>
+    </ClCompile>
+    <ClCompile Include="Vault.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
+    <ClCompile Include="CryptoEngine.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="3rd Party">
+      <UniqueIdentifier>{708c6f5c-39cd-4588-b5c1-1768040774c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rd Party\Sqlite3">
+      <UniqueIdentifier>{c555911a-5833-4804-92fc-52c3856d27c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server">
+      <UniqueIdentifier>{6bffb4db-0aa1-405b-b32d-5c8aef464a24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Database Layer">
+      <UniqueIdentifier>{c14fa985-6478-426a-97f2-092edf5e05ad}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

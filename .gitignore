@@ -1,0 +1,8 @@
+# Visual Studio
+# =============
+.vs
+KytheraLock.Server.vcxproj.user
+x64
+
+.idea
+

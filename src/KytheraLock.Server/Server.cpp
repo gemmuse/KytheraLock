@@ -1,6 +1,6 @@
 /*
 This source file is part of Kythera Lock
-For the latest info, see https ://github.com/SwatKat1977/KytheraLock
+For the latest info, see https://github.com/gemmuse/KytheraLock
 
 Copyright 2026 Kythera Lock Development Team
 

@@ -42,7 +42,9 @@
     <ClCompile Include="Vault.cpp">
       <Filter>Server</Filter>
     </ClCompile>
-    <ClCompile Include="CryptoEngine.cpp" />
+    <ClCompile Include="CryptoEngine.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rd Party">

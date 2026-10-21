@@ -257,6 +257,12 @@ Keep keys in a small RAII wrapper (`SecureBuffer`) using `sodium_malloc` /
 `sodium_mlock` so they are locked out of swap and wiped on destruction.
 Implement alongside the real encryption, since key types change then anyway.
 
+**Status:** done for the master key and record keys. `SecureBuffer` uses
+`sodium_malloc` (locked memory with guard pages, wiped when destroyed), cannot
+be copied, and has no way to be printed. `DeriveMasterKey` returns one, and
+`Seal` / `Open` take keys as one. The password and the plaintext returned by
+`Vault::GetSecret` are still ordinary strings.
+
 ### D6. Secret names are encrypted
 Names are encrypted like other contents.
 - **Partial search** (e.g. `@google.com`): the client decrypts the names after
@@ -553,6 +559,19 @@ the client encrypts.
 - Base64 helpers.
 - The start-up crash in the test program is fixed (it now checks
   `Vault::IsInitialised()`).
+- Real encryption primitives (D2, D18): `CryptoEngine::Seal` and `Open`
+  produce and read the self-describing record (version, algorithm, nonce,
+  ciphertext and tag) with the context (purpose, vault id, record id) bound
+  in. Every failure to open gives one message.
+- Unit tests: `KytheraLock.Core.Tests`, using doctest v2.5.3 (vendored in
+  `src/3rdParty/doctest`, pinned, with a checksum recorded). 42 test cases
+  cover `SecureBuffer`, key derivation, sealing and opening records (including
+  every single-byte tamper, every truncation and every context field) and the
+  vault, using an in-memory `IVaultStorage` so no database is needed. The
+  tests were also checked by deliberately breaking the code to confirm they
+  fail.
+- `SecureBuffer` for the master key and record keys (D5).
+- Stored secrets are now genuinely encrypted (interim design, below).
 
 ### Storage tables
 
@@ -560,7 +579,7 @@ the client encrypts.
 |-------|---------|--------|
 | `meta` | Key/value settings: `kdf_salt`, `kdf_verifier`. | In use |
 | `vaults` | A named collection of secrets. v1 has one row, id 1. | In use |
-| `secrets` | One row per item: name, nonce, ciphertext, and its own encrypted key plus nonce. | In use (stored unencrypted for now) |
+| `secrets` | One row per item: name, nonce, ciphertext, and its own encrypted key plus nonce. | In use. **Interim:** the whole sealed record is kept (base64) in `ciphertext`; the other three columns are empty |
 | `users` | Public key, plus the private key stored encrypted. | Planned, unused |
 | `vault_keys` | The vault's key, wrapped separately for each user or recovery method. | Planned, unused |
 
@@ -568,9 +587,13 @@ Binary values are stored as base64 text. Secret names are currently plain
 text, which D6 will change.
 
 ### Known problems
-- `CryptoEngine::Encrypt` / `Decrypt` are stubs: **secrets are stored
-  unencrypted**. Do not store real passwords yet.
-- The master key is held in a normal `std::vector` (see D5).
+- **Interim storage design.** Secrets are encrypted, but directly with the
+  master key (no vault key or per-secret keys yet, D1), the secret's *name*
+  stands in for the record id in the context (D18 wants a client-generated
+  random id), and the database layout is unchanged. Vaults created before this
+  change contain old placeholder data and cannot be read: delete the test
+  `vault.db`. Do not store real passwords yet.
+- Secret names are still stored in plain text (D6).
 - The test program (`Server.cpp`) always re-adds "github", so a second run
   reports a duplicate-name error.
 - The test program (`Server.cpp`) still plays both client and server in one
@@ -580,10 +603,11 @@ text, which D6 will change.
 ### Suggested order of work
 1. Confirm D2 and settle the format of the wrapped-key records.
 2. ~~Split the project: a core library (crypto + vault) and a server.~~ Done.
-3. Implement real `Encrypt` / `Decrypt` with tests using known inputs.
-4. Implement the vault key, per-secret keys and key wrapping (D1), plus
-   `SecureBuffer` (D5), stored KDF settings (D3), and the Secret Key with
-   separate encryption and login subkeys (D11).
+3. ~~Implement real `Encrypt` / `Decrypt`~~ Done as `Seal` / `Open` (D18), with
+   `SecureBuffer` (D5), and a test project.
+4. Implement the vault key, per-secret keys and key wrapping (D1), client-
+   generated record ids and the final table layout (D18), stored KDF settings
+   (D3), and the Secret Key with separate encryption and login subkeys (D11).
 5. Password change, then the recovery key (D4).
 6. Encrypted names and blind index (D6).
 7. Tests: wrong password, tampered data, lock/unlock cycles, password change,
@@ -600,3 +624,17 @@ Requires libsodium. Set these environment variables:
 - `KYTHERALOCK_LIBSODIUM_LIBS_X64`
 
 Open `src/KytheraLock.sln` in Visual Studio.
+
+`KYTHERALOCK_LIBSODIUM_LIBS_X64` is the folder that contains the `Debug` and
+`Release` folders of the libsodium build. The test project expects the static
+library at `Debug\libsodium.lib` and `Release\v143\static\libsodium.lib`.
+
+### Running the tests
+Build the solution (x64), then run:
+
+```
+src\x64\Debug\KytheraLock.Core.Tests.exe
+```
+
+doctest options are available, for example `--help`, or
+`-tc="Records*"` to run only test cases whose names start with "Records".

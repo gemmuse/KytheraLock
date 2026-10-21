@@ -19,12 +19,26 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 */
 #include "Vault.h"
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace kythera::core {
+
+namespace {
+
+// Where a secret belongs, mixed into its encryption (see CryptoEngine.h).
+// Interim: the secret's name stands in for the record id.
+CryptoEngine::RecordContext SecretContext(int vaultId,
+                                          const std::string& name) {
+    return { CryptoEngine::Purpose::SECRET,
+             static_cast<std::uint64_t>(vaultId),
+             std::vector<unsigned char>(name.begin(), name.end()) };
+}
+
+}   // namespace
 
 Vault::Vault(IVaultStorage& storage, CryptoEngine& crypto)
     : storage_(storage), crypto_(crypto) {
@@ -88,13 +102,10 @@ void Vault::Unlock(const std::string& password) {
 }
 
 void Vault::Lock() {
-    // Locking = forgetting the key. sodium_memzero overwrites the bytes with
-    // zeros; a plain clear() could leave the key sitting in memory (and the
-    // compiler is allowed to optimise away a "pointless" ordinary wipe).
-    if (!masterKey_.empty()) {
-        sodium_memzero(masterKey_.data(), masterKey_.size());
-        masterKey_.clear();
-    }
+    // Locking = forgetting the key. Replacing the buffer with an empty one
+    // destroys the old one, and a SecureBuffer overwrites its memory with
+    // zeros when it is destroyed (a plain clear() on a vector would not).
+    masterKey_ = SecureBuffer();
 
     unlocked_ = false;
 }
@@ -108,24 +119,26 @@ void Vault::AddSecret(const std::string& name,
                       const std::string& plaintext) {
     RequireUnlocked();
 
-    // Stub encryption
-    // In reality this will use "envelope encryption":
+    // INTERIM DESIGN. The secret is sealed straight into one record using the
+    // master key, and the record is kept (as base64 text) in the ciphertext
+    // column. The other three columns are unused for now and left empty.
+    //
+    // The final design (D1, D18) is "envelope encryption":
     //  - Generate a fresh random data key just for this secret
-    //  - Encrypt the plaintext with that data key
-    //  - Wrap (encrypt) the data key with the vault key, and store the
-    //    wrapped key beside the secret (the encrypted_secret_key columns)
-
-    auto encrypted = crypto_.Encrypt(plaintext);
-
-    std::string fake_encrypted_key = "encrypted_key_stub";
-    std::string fake_encrypted_key_nonce = "key_nonce_stub";
+    //  - Seal the plaintext with that data key
+    //  - Wrap (seal) the data key with the vault key, and store the wrapped
+    //    key beside the secret
+    // and the record id will be a random id made by the client. Until that
+    // exists, the secret's name (unique within a vault) stands in for it.
+    auto record = crypto_.Seal(masterKey_, plaintext,
+                               SecretContext(vaultId_, name));
 
     storage_.InsertSecretRecord(vaultId_,
                                 name,
-                                encrypted.nonce,
-                                encrypted.ciphertext,
-                                fake_encrypted_key,
-                                fake_encrypted_key_nonce);
+                                "",
+                                crypto_.B64Encode(record),
+                                "",
+                                "");
 }
 
 std::string Vault::GetSecret(const std::string& name) {
@@ -136,11 +149,12 @@ std::string Vault::GetSecret(const std::string& name) {
     if (!recordOpt)
         throw std::runtime_error("Secret not found");
 
-    CryptoEngine::EncryptedBlob blob;
-    blob.nonce = recordOpt->nonce;
-    blob.ciphertext = recordOpt->ciphertext;
+    auto record = crypto_.B64Decode(recordOpt->ciphertext);
+    auto plaintext = crypto_.Open(masterKey_, record,
+                                  SecretContext(vaultId_, name));
 
-    return crypto_.Decrypt(blob);
+    return std::string(reinterpret_cast<const char*>(plaintext.data()),
+                       plaintext.size());
 }
 
 std::vector<std::string> Vault::ListSecrets() {

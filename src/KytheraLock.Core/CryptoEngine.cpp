@@ -19,27 +19,12 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 */
 #include "CryptoEngine.h"
 
+#include <cstring>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace kythera::core {
-
-CryptoEngine::EncryptedBlob CryptoEngine::Encrypt(
-    const std::string& plaintext) {
-    // STUB : Replace with real crypto later.
-    // WARNING: this does NOT encrypt anything yet - the "ciphertext" is the
-    // plaintext, so secrets are currently stored readable in the database.
-    return {
-        "stub_nonce",
-        plaintext
-    };
-}
-
-std::string CryptoEngine::Decrypt(const EncryptedBlob& blob) {
-    // STUB
-    return blob.ciphertext;
-}
 
 void CryptoEngine::Initialize() {
     if (sodium_init() < 0) {
@@ -65,13 +50,13 @@ CryptoEngine::KDFBundle CryptoEngine::CreateKDFBundle(
     return b;
 }
 
-std::vector<unsigned char>
+SecureBuffer
 CryptoEngine::DeriveMasterKey(const std::string& password,
     const std::vector<unsigned char>& salt) const {
     if (salt.size() != SALT_SIZE)
         throw std::runtime_error("Salt size invalid");
 
-    std::vector<unsigned char> key(MASTER_KEY_SIZE);
+    SecureBuffer key(MASTER_KEY_SIZE);
 
     // This is the "slow scramble". The same password + salt ALWAYS gives the
     // same key (that is how unlocking works), but it is deliberately costly
@@ -102,7 +87,7 @@ CryptoEngine::DeriveMasterKey(const std::string& password,
 }
 
 std::vector<unsigned char> CryptoEngine::ComputeVerifier(
-    const std::vector<unsigned char>& masterKey) const {
+    const SecureBuffer& masterKey) const {
     if (masterKey.size() != MASTER_KEY_SIZE)
         throw std::runtime_error("Master key size invalid");
 
@@ -169,6 +154,126 @@ bool CryptoEngine::EqualsConstantTime(
     // lengths here are fixed and public.)
     if (a.size() != b.size()) return false;
     return sodium_memcmp(a.data(), b.data(), a.size()) == 0;
+}
+
+std::vector<unsigned char> CryptoEngine::BuildContextBytes(
+    const RecordContext& context) {
+    // Layout (every field has a fixed size, or a size written in front of it):
+    //   [version][algorithm][purpose][vault id: 8 bytes][id size: 4 bytes][id]
+    // Numbers are written most-significant byte first.
+    if (context.recordId.size() > UINT32_MAX)
+        throw std::invalid_argument("Record id too long");
+
+    const auto idSize = static_cast<std::uint32_t>(context.recordId.size());
+
+    std::vector<unsigned char> bytes;
+    bytes.reserve(2 + 1 + 8 + 4 + context.recordId.size());
+
+    bytes.push_back(RECORD_VERSION);
+    bytes.push_back(ALGORITHM_XCHACHA20_POLY1305);
+    bytes.push_back(static_cast<unsigned char>(context.purpose));
+
+    for (int shift = 56; shift >= 0; shift -= 8)
+        bytes.push_back(static_cast<unsigned char>(
+            (context.vaultId >> shift) & 0xFF));
+
+    for (int shift = 24; shift >= 0; shift -= 8)
+        bytes.push_back(static_cast<unsigned char>((idSize >> shift) & 0xFF));
+
+    bytes.insert(bytes.end(), context.recordId.begin(),
+                 context.recordId.end());
+
+    return bytes;
+}
+
+std::vector<unsigned char> CryptoEngine::Seal(
+    const SecureBuffer& key,
+    const unsigned char* plaintext,
+    size_t plaintextSize,
+    const RecordContext& context) const {
+    if (key.size() != RECORD_KEY_SIZE)
+        throw std::invalid_argument("Record key size invalid");
+
+    if (plaintext == nullptr && plaintextSize > 0)
+        throw std::invalid_argument("Plaintext missing");
+
+    if (plaintextSize > crypto_aead_xchacha20poly1305_ietf_MESSAGEBYTES_MAX)
+        throw std::invalid_argument("Plaintext too long");
+
+    const auto contextBytes = BuildContextBytes(context);
+
+    std::vector<unsigned char> record(RECORD_OVERHEAD + plaintextSize);
+    record[0] = RECORD_VERSION;
+    record[1] = ALGORITHM_XCHACHA20_POLY1305;
+
+    // A brand new random nonce for every record. The nonce must never repeat
+    // under the same key; 24 random bytes make a repeat practically
+    // impossible, which is why this cipher was chosen (D2).
+    unsigned char* nonce = record.data() + 2;
+    randombytes_buf(nonce, NONCE_SIZE);
+
+    unsigned long long ciphertextSize = 0;
+    crypto_aead_xchacha20poly1305_ietf_encrypt(
+        record.data() + 2 + NONCE_SIZE, &ciphertextSize,
+        plaintext, plaintextSize,
+        contextBytes.data(), contextBytes.size(),
+        nullptr, nonce, key.data());
+
+    if (ciphertextSize != plaintextSize + TAG_SIZE)
+        throw std::runtime_error("Unexpected ciphertext size");
+
+    return record;
+}
+
+std::vector<unsigned char> CryptoEngine::Seal(
+    const SecureBuffer& key,
+    std::string_view plaintext,
+    const RecordContext& context) const {
+    return Seal(key,
+                reinterpret_cast<const unsigned char*>(plaintext.data()),
+                plaintext.size(), context);
+}
+
+SecureBuffer CryptoEngine::Open(
+    const SecureBuffer& key,
+    const std::vector<unsigned char>& record,
+    const RecordContext& context) const {
+    // A wrong-sized key is a mistake in our own code, not a property of the
+    // data being opened, so it is reported differently.
+    if (key.size() != RECORD_KEY_SIZE)
+        throw std::invalid_argument("Record key size invalid");
+
+    // Every way of failing to open a record gives the same message, so the
+    // error never tells an attacker which check failed.
+    static const char kCannotOpen[] = "Record could not be opened";
+
+    if (record.size() < RECORD_OVERHEAD ||
+        record[0] != RECORD_VERSION ||
+        record[1] != ALGORITHM_XCHACHA20_POLY1305) {
+        throw std::runtime_error(kCannotOpen);
+    }
+
+    const auto contextBytes = BuildContextBytes(context);
+
+    const unsigned char* nonce = record.data() + 2;
+    const unsigned char* ciphertext = nonce + NONCE_SIZE;
+    const size_t ciphertextSize = record.size() - 2 - NONCE_SIZE;
+
+    SecureBuffer plaintext(ciphertextSize - TAG_SIZE);
+
+    // Checks the authentication tag first; only if it matches is anything
+    // written to the output.
+    unsigned long long plaintextSize = 0;
+    if (crypto_aead_xchacha20poly1305_ietf_decrypt(
+            plaintext.data(), &plaintextSize,
+            nullptr,
+            ciphertext, ciphertextSize,
+            contextBytes.data(), contextBytes.size(),
+            nonce, key.data()) != 0) {
+        throw std::runtime_error(kCannotOpen);
+    }
+
+    return plaintext;
 }
 
 }   // namespace kythera::core

@@ -170,6 +170,28 @@ end-to-end encrypted services such as Proton.
 - The browser extension will need libsodium compiled to WebAssembly (libsodium
   provides this) so the same primitives run in the browser.
 
+### Why `IVaultStorage` lives in Core but `VaultStorageLayer` does not
+The rule is about which code depends on which. `IVaultStorage` says *what Core
+needs* ("somewhere to keep encrypted data"), so it lives in Core.
+`VaultStorageLayer` is *how* that is done with SQLite, so it lives outside Core.
+
+```
+Server (SQLite code) ---implements---> IVaultStorage <---used by--- Vault
+                                          (both inside Core)
+```
+
+- The interface cannot live in Server: `Vault` (in Core) must know its shape,
+  so Core would have to include a Server header while Server already uses
+  Core. That circular dependency would undo the split.
+- `VaultStorageLayer` cannot live in Core: it needs SQLite and SQL, and then
+  every client built on Core (command line, browser extension) would need
+  SQLite too. Core must need only libsodium.
+- Benefits: a client can supply a different implementation that talks to the
+  server over the network, and tests can use a simple in-memory fake instead of
+  a real database.
+- This is the first version of that seam. When the real server is built (its
+  job is storing encrypted blobs), the interface may need to change.
+
 ### Still to be decided
 - **How the client proves who it is to the server without revealing the
   password.** Direction chosen in D11: derive a *separate* login secret

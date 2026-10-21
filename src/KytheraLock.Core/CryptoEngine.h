@@ -24,6 +24,8 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include <vector>
 #include "sodium.h"
 
+namespace kythera::core {
+
 /**
  * @brief Cryptographic operations for the vault.
  *
@@ -100,5 +102,7 @@ class CryptoEngine {
     EncryptedBlob Encrypt(const std::string& plaintext);
     std::string Decrypt(const EncryptedBlob& blob);
 };
+
+}   // namespace kythera::core
 
 #endif  // CRYPTOENGINE_H_

@@ -24,6 +24,8 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include "CryptoEngine.h"
 #include "IVaultStorage.h"
 
+namespace kythera::core {
+
 /**
  * @brief High-level vault domain logic.
  *
@@ -68,5 +70,7 @@ class Vault {
     int vaultId_{ 1 };  // v1: single vault
     std::vector<unsigned char> masterKey_;
 };
+
+}   // namespace kythera::core
 
 #endif  // VAULT_H_

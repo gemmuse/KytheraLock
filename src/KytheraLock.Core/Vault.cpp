@@ -23,6 +23,8 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include <vector>
 #include "Vault.h"
 
+namespace kythera::core {
+
 Vault::Vault(IVaultStorage& storage, CryptoEngine& crypto)
     : storage_(storage), crypto_(crypto) {
 }
@@ -144,3 +146,5 @@ std::vector<std::string> Vault::ListSecrets() {
     RequireUnlocked();
     return storage_.ListSecretNames(vaultId_);
 }
+
+}   // namespace kythera::core

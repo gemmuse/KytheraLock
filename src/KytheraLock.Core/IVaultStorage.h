@@ -23,6 +23,8 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
+namespace kythera::core {
+
 /// One stored secret, exactly as it is kept: already encrypted.
 struct SecretRecord {
     int id;
@@ -78,5 +80,7 @@ class IVaultStorage {
     /// Create the single default vault (v1 has only one).
     virtual void CreateDefaultVault() = 0;
 };
+
+}   // namespace kythera::core
 
 #endif  // IVAULTSTORAGE_H_

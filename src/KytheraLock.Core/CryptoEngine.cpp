@@ -22,6 +22,8 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include <vector>
 #include "CryptoEngine.h"
 
+namespace kythera::core {
+
 CryptoEngine::EncryptedBlob CryptoEngine::Encrypt(
     const std::string& plaintext) {
     // STUB : Replace with real crypto later.
@@ -167,3 +169,5 @@ bool CryptoEngine::EqualsConstantTime(
     if (a.size() != b.size()) return false;
     return sodium_memcmp(a.data(), b.data(), a.size()) == 0;
 }
+
+}   // namespace kythera::core

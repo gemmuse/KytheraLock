@@ -79,10 +79,12 @@
   <ItemGroup>
     <ClInclude Include="CryptoEngine.h" />
     <ClInclude Include="IVaultStorage.h" />
+    <ClInclude Include="SecureBuffer.h" />
     <ClInclude Include="Vault.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CryptoEngine.cpp" />
+    <ClCompile Include="SecureBuffer.cpp" />
     <ClCompile Include="Vault.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

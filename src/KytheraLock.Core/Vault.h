@@ -68,7 +68,7 @@ class Vault {
     CryptoEngine& crypto_;
     bool unlocked_{ false };
     int vaultId_{ 1 };  // v1: single vault
-    std::vector<unsigned char> masterKey_;
+    SecureBuffer masterKey_;
 };
 
 }   // namespace kythera::core

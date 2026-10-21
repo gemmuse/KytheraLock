@@ -162,7 +162,10 @@ end-to-end encrypted services such as Proton.
 ### Consequences for the code
 - The crypto and vault logic (`CryptoEngine`, `Vault`, key handling) must live
   in a **shared core library** used by every client, not inside the server
-  project. Today it all sits in `KytheraLock.Server`, so this needs splitting.
+  project. This split is done: `KytheraLock.Core` holds `CryptoEngine`,
+  `Vault` and the `IVaultStorage` interface, and depends only on libsodium.
+  Core never includes SQLite or server code; storage is reached only through
+  `IVaultStorage`, which the SQLite `VaultStorageLayer` implements.
 - The server project shrinks to storage, authentication and (later) sync.
 - The browser extension will need libsodium compiled to WebAssembly (libsodium
   provides this) so the same primitives run in the browser.
@@ -487,11 +490,13 @@ text, which D6 will change.
 - The master key is held in a normal `std::vector` (see D5).
 - The test program (`Server.cpp`) always re-adds "github", so a second run
   reports a duplicate-name error.
-- Crypto and server code share one project (see section 5).
+- The test program (`Server.cpp`) still plays both client and server in one
+  process, and the Server project is only fully configured for Debug x64
+  (Release x64 and Win32 lack the libsodium settings).
 
 ### Suggested order of work
 1. Confirm D2 and settle the format of the wrapped-key records.
-2. Split the project: a core library (crypto + vault) and a server.
+2. ~~Split the project: a core library (crypto + vault) and a server.~~ Done.
 3. Implement real `Encrypt` / `Decrypt` with tests using known inputs.
 4. Implement the vault key, per-secret keys and key wrapping (D1), plus
    `SecureBuffer` (D5), stored KDF settings (D3), and the Secret Key with

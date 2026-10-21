@@ -17,9 +17,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.If not, see < https://www.gnu.org/licenses/>.
 */
+#include "SqliteDatabase.h"
+
 #include <stdexcept>
 #include <string>
-#include "SqliteDatabase.h"
+
+namespace kythera::server {
 
 SqliteDatabase::SqliteDatabase(const std::string& path) {
     if (sqlite3_open(path.c_str(), &db_) != SQLITE_OK) {
@@ -46,3 +49,5 @@ void SqliteDatabase::Exec(const std::string& sql) {
         throw std::runtime_error("SQLite exec failed: " + msg);
     }
 }
+
+}   // namespace kythera::server

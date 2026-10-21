@@ -26,12 +26,12 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 
 
 int main(int argc, char* argv[]) {
-    SqliteDatabase db("vault.db");
+    kythera::server::SqliteDatabase db("vault.db");
     kythera::server::VaultStorageLayer storage(db);
     kythera::core::CryptoEngine cryptoEngine;
     kythera::core::Vault vault(storage, cryptoEngine);
 
-    std::cout << "Version " << Version::ToString() << std::endl;
+    std::cout << "Version " << kythera::server::version::ToString() << std::endl;
 
     cryptoEngine.Initialize();
 

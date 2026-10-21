@@ -24,7 +24,7 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include <tuple>
 #include <optional>
 
-namespace Version {
+namespace kythera::server::version {
 
 constexpr int MAJOR = 0;
 constexpr int MINOR = 1;
@@ -51,6 +51,6 @@ inline std::string ToString() {
     return version;
 }
 
-}   // namespace Version
+}   // namespace kythera::server::version
 
 #endif  // VERSION_H_

@@ -19,10 +19,11 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 */
 #ifndef CRYPTOENGINE_H_
 #define CRYPTOENGINE_H_
+#include <sodium.h>
+
 #include <string>
 #include <string_view>
 #include <vector>
-#include "sodium.h"
 
 namespace kythera::core {
 

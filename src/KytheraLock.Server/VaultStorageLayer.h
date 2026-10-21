@@ -25,6 +25,8 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include "IVaultStorage.h"
 #include "SqliteDatabase.h"
 
+namespace kythera::server {
+
 /**
  * @brief Provides storage operations for the vault database.
  *
@@ -39,7 +41,7 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
  * This is the SQLite implementation of the IVaultStorage interface that the
  * Core library depends on.
  */
-class VaultStorageLayer : public IVaultStorage {
+class VaultStorageLayer : public core::IVaultStorage {
  public:
     explicit VaultStorageLayer(SqliteDatabase& db);
 
@@ -79,7 +81,7 @@ class VaultStorageLayer : public IVaultStorage {
      */
     std::vector<std::string> ListSecretNames(int vaultId) override;
 
-    std::optional<SecretRecord> GetSecretRecord(
+    std::optional<core::SecretRecord> GetSecretRecord(
         int vaultId,
         const std::string& name) override;
 
@@ -88,5 +90,7 @@ class VaultStorageLayer : public IVaultStorage {
  private:
     SqliteDatabase& db_;
 };
+
+}   // namespace kythera::server
 
 #endif  // VAULTSTORAGELAYER_H_

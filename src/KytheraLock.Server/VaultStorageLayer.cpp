@@ -23,6 +23,7 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include "VaultStorageLayer.h"
 #include "Statement.h"
 
+namespace kythera::server {
 
 VaultStorageLayer::VaultStorageLayer(SqliteDatabase& db) : db_(db) {
 }
@@ -138,7 +139,7 @@ VaultStorageLayer::ListSecretNames(int vaultId) {
     return results;
 }
 
-std::optional<SecretRecord> VaultStorageLayer::GetSecretRecord(
+std::optional<core::SecretRecord> VaultStorageLayer::GetSecretRecord(
     int vaultId,
     const std::string& name) {
     Statement statement(
@@ -154,7 +155,7 @@ std::optional<SecretRecord> VaultStorageLayer::GetSecretRecord(
     if (!statement.Step())
         return std::nullopt;
 
-    SecretRecord record;
+    core::SecretRecord record;
     record.id = statement.ColumnInt(0);
     record.vaultId = statement.ColumnInt(1);
     record.name = statement.ColumnText(2);
@@ -173,3 +174,5 @@ void VaultStorageLayer::CreateDefaultVault() {
 
     statement.Step();
 }
+
+}   // namespace kythera::server

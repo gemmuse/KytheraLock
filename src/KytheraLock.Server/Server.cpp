@@ -24,11 +24,12 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include "CryptoEngine.h"
 #include "Version.h"
 
+
 int main(int argc, char* argv[]) {
     SqliteDatabase db("vault.db");
-    VaultStorageLayer storage(db);
-    CryptoEngine cryptoEngine;
-    Vault vault(storage, cryptoEngine);
+    kythera::server::VaultStorageLayer storage(db);
+    kythera::core::CryptoEngine cryptoEngine;
+    kythera::core::Vault vault(storage, cryptoEngine);
 
     std::cout << "Version " << Version::ToString() << std::endl;
 

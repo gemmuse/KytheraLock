@@ -22,6 +22,8 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include <string>
 #include "sqlite/sqlite3.h"
 
+namespace kythera::server {
+
 /**
  * @brief RAII wrapper around a SQLite database connection.
  *
@@ -75,5 +77,7 @@ class SqliteDatabase {
  private:
     sqlite3* db_{ nullptr };
 };
+
+}   // namespace kythera::server
 
 #endif  // SQLITEDATABASE_H_

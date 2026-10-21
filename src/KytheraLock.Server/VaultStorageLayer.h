@@ -22,17 +22,10 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include <optional>
 #include <string>
 #include <vector>
+#include "IVaultStorage.h"
 #include "SqliteDatabase.h"
 
-struct SecretRecord {
-    int id;
-    int vaultId;
-    std::string name;
-    std::string nonce;
-    std::string ciphertext;
-    std::string encryptedKey;
-    std::string encryptedKeyNonce;
-};
+namespace kythera::server {
 
 /**
  * @brief Provides storage operations for the vault database.
@@ -44,8 +37,11 @@ struct SecretRecord {
  * It does NOT:
  *  - Perform cryptographic operations
  *  - Manage database file ownership
+ *
+ * This is the SQLite implementation of the IVaultStorage interface that the
+ * Core library depends on.
  */
-class VaultStorageLayer {
+class VaultStorageLayer : public core::IVaultStorage {
  public:
     explicit VaultStorageLayer(SqliteDatabase& db);
 
@@ -54,19 +50,19 @@ class VaultStorageLayer {
      *
      * Safe to call once when initializing a new vault.
      */
-    void CreateSchema();
+    void CreateSchema() override;
 
     /**
      * @brief Insert or update a meta key/value pair.
      */
-    void SetMeta(const std::string& key, const std::string& value);
+    void SetMeta(const std::string& key, const std::string& value) override;
 
     /**
      * @brief Retrieve a meta value.
      *
      * Returns std::nullopt if the key does not exist.
      */
-    std::optional<std::string> GetMeta(const std::string& key);
+    std::optional<std::string> GetMeta(const std::string& key) override;
 
     /**
      * @brief Insert a secret record (already encrypted).
@@ -78,20 +74,23 @@ class VaultStorageLayer {
                             const std::string& nonce,
                             const std::string& ciphertext,
                             const std::string& encryptedKey,
-                            const std::string& encryptedKeyNonce);
+                            const std::string& encryptedKeyNonce) override;
 
     /**
      * @brief Return all secret names in a vault.
      */
-    std::vector<std::string> ListSecretNames(int vaultId);
+    std::vector<std::string> ListSecretNames(int vaultId) override;
 
-    std::optional<SecretRecord> GetSecretRecord(int vaultId,
-                                                const std::string& name);
+    std::optional<core::SecretRecord> GetSecretRecord(
+        int vaultId,
+        const std::string& name) override;
 
-    void CreateDefaultVault();
+    void CreateDefaultVault() override;
 
  private:
     SqliteDatabase& db_;
 };
+
+}   // namespace kythera::server
 
 #endif  // VAULTSTORAGELAYER_H_

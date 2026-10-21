@@ -21,8 +21,10 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #define VAULT_H_
 #include <string>
 #include <vector>
-#include "VaultStorageLayer.h"
 #include "CryptoEngine.h"
+#include "IVaultStorage.h"
+
+namespace kythera::core {
 
 /**
  * @brief High-level vault domain logic.
@@ -37,7 +39,7 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
  */
 class Vault {
  public:
-    explicit Vault(VaultStorageLayer& storage, CryptoEngine& crypto);
+    explicit Vault(IVaultStorage& storage, CryptoEngine& crypto);
 
     /// True if a vault has already been created in this database
     bool IsInitialised();
@@ -62,11 +64,13 @@ class Vault {
  private:
     void RequireUnlocked() const;
 
-    VaultStorageLayer& storage_;
+    IVaultStorage& storage_;
     CryptoEngine& crypto_;
     bool unlocked_{ false };
     int vaultId_{ 1 };  // v1: single vault
     std::vector<unsigned char> masterKey_;
 };
+
+}   // namespace kythera::core
 
 #endif  // VAULT_H_

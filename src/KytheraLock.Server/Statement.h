@@ -22,6 +22,8 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include <string>
 #include "sqlite/sqlite3.h"
 
+namespace kythera::server {
+
 /**
  * @brief RAII wrapper for a prepared SQLite statement.
  *
@@ -114,5 +116,7 @@ class Statement {
     sqlite3* db_;
     sqlite3_stmt* stmt_{ nullptr };
 };
+
+}   // namespace kythera::server
 
 #endif  // STATEMENT_H_

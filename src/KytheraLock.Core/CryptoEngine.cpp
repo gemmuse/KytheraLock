@@ -17,10 +17,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.If not, see < https://www.gnu.org/licenses/>.
 */
+#include "CryptoEngine.h"
+
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "CryptoEngine.h"
+
+namespace kythera::core {
 
 CryptoEngine::EncryptedBlob CryptoEngine::Encrypt(
     const std::string& plaintext) {
@@ -167,3 +170,5 @@ bool CryptoEngine::EqualsConstantTime(
     if (a.size() != b.size()) return false;
     return sodium_memcmp(a.data(), b.data(), a.size()) == 0;
 }
+
+}   // namespace kythera::core

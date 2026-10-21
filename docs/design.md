@@ -162,10 +162,35 @@ end-to-end encrypted services such as Proton.
 ### Consequences for the code
 - The crypto and vault logic (`CryptoEngine`, `Vault`, key handling) must live
   in a **shared core library** used by every client, not inside the server
-  project. Today it all sits in `KytheraLock.Server`, so this needs splitting.
+  project. This split is done: `KytheraLock.Core` holds `CryptoEngine`,
+  `Vault` and the `IVaultStorage` interface, and depends only on libsodium.
+  Core never includes SQLite or server code; storage is reached only through
+  `IVaultStorage`, which the SQLite `VaultStorageLayer` implements.
 - The server project shrinks to storage, authentication and (later) sync.
 - The browser extension will need libsodium compiled to WebAssembly (libsodium
   provides this) so the same primitives run in the browser.
+
+### Why `IVaultStorage` lives in Core but `VaultStorageLayer` does not
+The rule is about which code depends on which. `IVaultStorage` says *what Core
+needs* ("somewhere to keep encrypted data"), so it lives in Core.
+`VaultStorageLayer` is *how* that is done with SQLite, so it lives outside Core.
+
+```
+Server (SQLite code) ---implements---> IVaultStorage <---used by--- Vault
+                                          (both inside Core)
+```
+
+- The interface cannot live in Server: `Vault` (in Core) must know its shape,
+  so Core would have to include a Server header while Server already uses
+  Core. That circular dependency would undo the split.
+- `VaultStorageLayer` cannot live in Core: it needs SQLite and SQL, and then
+  every client built on Core (command line, browser extension) would need
+  SQLite too. Core must need only libsodium.
+- Benefits: a client can supply a different implementation that talks to the
+  server over the network, and tests can use a simple in-memory fake instead of
+  a real database.
+- This is the first version of that seam. When the real server is built (its
+  job is storing encrypted blobs), the interface may need to change.
 
 ### Still to be decided
 - **How the client proves who it is to the server without revealing the
@@ -487,11 +512,13 @@ text, which D6 will change.
 - The master key is held in a normal `std::vector` (see D5).
 - The test program (`Server.cpp`) always re-adds "github", so a second run
   reports a duplicate-name error.
-- Crypto and server code share one project (see section 5).
+- The test program (`Server.cpp`) still plays both client and server in one
+  process, and the Server project is only fully configured for Debug x64
+  (Release x64 and Win32 lack the libsodium settings).
 
 ### Suggested order of work
 1. Confirm D2 and settle the format of the wrapped-key records.
-2. Split the project: a core library (crypto + vault) and a server.
+2. ~~Split the project: a core library (crypto + vault) and a server.~~ Done.
 3. Implement real `Encrypt` / `Decrypt` with tests using known inputs.
 4. Implement the vault key, per-secret keys and key wrapping (D1), plus
    `SecureBuffer` (D5), stored KDF settings (D3), and the Secret Key with

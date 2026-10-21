@@ -105,6 +105,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;SODIUM_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\KytheraLock.Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -122,6 +123,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\KytheraLock.Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -131,21 +133,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\3rdParty\sqlite\sqlite3.h" />
-    <ClInclude Include="CryptoEngine.h" />
     <ClInclude Include="SqliteDatabase.h" />
     <ClInclude Include="Statement.h" />
-    <ClInclude Include="Vault.h" />
     <ClInclude Include="VaultStorageLayer.h" />
     <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\3rdParty\sqlite\sqlite3.c" />
-    <ClCompile Include="CryptoEngine.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="SqliteDatabase.cpp" />
     <ClCompile Include="Statement.cpp" />
-    <ClCompile Include="Vault.cpp" />
     <ClCompile Include="VaultStorageLayer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KytheraLock.Core\KytheraLock.Core.vcxproj">
+      <Project>{7d4b2c1e-5a38-4f6e-9b0d-2c8e1a6f3d94}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

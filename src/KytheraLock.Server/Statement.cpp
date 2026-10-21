@@ -17,9 +17,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.If not, see < https://www.gnu.org/licenses/>.
 */
+#include "Statement.h"
+
 #include <stdexcept>
 #include <string>
-#include "Statement.h"
+
+namespace kythera::server {
 
 Statement::Statement(sqlite3* db, const std::string& sql) : db_(db) {
     if (sqlite3_prepare_v2(db_,
@@ -65,3 +68,5 @@ std::string Statement::ColumnText(int index) const {
 int Statement::ColumnInt(int index) const {
     return sqlite3_column_int(stmt_, index);
 }
+
+}   // namespace kythera::server

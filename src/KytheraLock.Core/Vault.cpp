@@ -17,13 +17,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.If not, see < https://www.gnu.org/licenses/>.
 */
+#include "Vault.h"
+
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
-#include "Vault.h"
 
-Vault::Vault(VaultStorageLayer& storage, CryptoEngine& crypto)
+namespace kythera::core {
+
+Vault::Vault(IVaultStorage& storage, CryptoEngine& crypto)
     : storage_(storage), crypto_(crypto) {
 }
 
@@ -144,3 +147,5 @@ std::vector<std::string> Vault::ListSecrets() {
     RequireUnlocked();
     return storage_.ListSecretNames(vaultId_);
 }
+
+}   // namespace kythera::core

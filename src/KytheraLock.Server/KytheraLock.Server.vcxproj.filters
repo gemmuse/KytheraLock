@@ -13,12 +13,6 @@
     <ClInclude Include="Statement.h">
       <Filter>Server\Database Layer</Filter>
     </ClInclude>
-    <ClInclude Include="Vault.h">
-      <Filter>Server</Filter>
-    </ClInclude>
-    <ClInclude Include="CryptoEngine.h">
-      <Filter>Server</Filter>
-    </ClInclude>
     <ClInclude Include="Version.h">
       <Filter>Server</Filter>
     </ClInclude>
@@ -38,12 +32,6 @@
     </ClCompile>
     <ClCompile Include="VaultStorageLayer.cpp">
       <Filter>Server\Database Layer</Filter>
-    </ClCompile>
-    <ClCompile Include="Vault.cpp">
-      <Filter>Server</Filter>
-    </ClCompile>
-    <ClCompile Include="CryptoEngine.cpp">
-      <Filter>Server</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

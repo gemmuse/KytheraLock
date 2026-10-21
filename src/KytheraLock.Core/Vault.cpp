@@ -23,7 +23,7 @@ along with this program.If not, see < https://www.gnu.org/licenses/>.
 #include <vector>
 #include "Vault.h"
 
-Vault::Vault(VaultStorageLayer& storage, CryptoEngine& crypto)
+Vault::Vault(IVaultStorage& storage, CryptoEngine& crypto)
     : storage_(storage), crypto_(crypto) {
 }
 
